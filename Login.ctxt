@@ -1,0 +1,7 @@
+#BlueJ class context
+comment0.target=Login
+comment1.params=args
+comment1.target=void\ main(java.lang.String[])
+comment2.params=connection\ id_sales\ nama_sales
+comment2.target=boolean\ checkLogin(java.sql.Connection,\ java.lang.String,\ java.lang.String)
+numComments=3
