@@ -1,5 +1,8 @@
 import java.sql.*;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class TestLogin {
 
@@ -51,10 +54,12 @@ public class TestLogin {
                     System.out.println("\nSELAMAT BERTUGAS " + nama_sales2);
                     
                     // Input data pemesanan
-                    inputDataPemesanan();
-
-                    // terminalInput.nextLine();
+                    TestLogin instance = new TestLogin();
+                    instance.inputDataPemesanan();
                     
+                    // Cetak Resi
+
+                    // terminalInput.nextLine();                    
                     
                 } else {
                     System.out.println("Id/Nama salah. Login gagal.");
@@ -63,26 +68,54 @@ public class TestLogin {
                     
                 isLanjutkan = getYesorNo("Input ulang? (y/n): ");
             }
-                    connection.setAutoCommit(false);
-                    prep.executeBatch();
-                    connection.setAutoCommit(true);
+            connection.setAutoCommit(false);
+            prep.executeBatch();
+            connection.setAutoCommit(true);
                     
-                    // Menutup ResultSet, Statement, dan Koneksi
-                    // test.close();
-                    connection.close();
+            // Menutup ResultSet, Statement, dan Koneksi
+            // test.close();
+            connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
     
+    public class Item {
+        
+        private String KodeBarang;
+        private int Qty;
+        private Double Promosi;
+        
+        public Item(String KodeBarang, int Qty, Double Promosi){
+            this.KodeBarang=KodeBarang;
+            this.Qty=Qty;
+            this.Promosi=Promosi;
+        }
+        
+        
+        public String getKodeBarang() {
+            return KodeBarang;
+        }
+        
+        public int getQty(){
+            return Qty;
+        }
+        
+        public double getPromosi(){
+            return Promosi;
+        }
+    }
     
     /**
      * Method untuk input data pesanan
      */
-    public static void inputDataPemesanan()throws Exception{
+    public void inputDataPemesanan()throws Exception{
         boolean isLanjutkan = true;
         Scanner terminalInput = new Scanner(System.in);
         Connection connection = DriverManager.getConnection(JDBC_URL);
+        
+        List<Item> myObjList =  new ArrayList<Item>();
+        double totalHarga = 0;
         while(isLanjutkan){
                     System.out.println("\nINPUT DATA PEMESANAN");
                     
@@ -92,41 +125,83 @@ public class TestLogin {
                     System.out.print("Input QTY barang: ");
                     int qty = terminalInput.nextInt();
                     
-                    // Melakukan koneksi ke database
-                    try {
-                        // Mengecek promosi berdasarkan ID barang
-                        String query = "SELECT nilai_promosi FROM promosi WHERE id_barang = ?";
-                        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                            preparedStatement.setString(1, id_barang);
-            
-                            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                                if (resultSet.next()) {
-                                    // Jika terdapat promosi, tampilkan nilai_promosi
-                                    double nilai_promosi = resultSet.getDouble("nilai_promosi");
-                                    // System.out.println("Promosi ditemukan! Nilai promosi: " + nilai_promosi);
-                                    System.out.println("Terdapat potongan harga sebesar: " + nilai_promosi);
-                                } else {
-                                    // Jika tidak terdapat promosi
-                                    System.out.println("Tidak ada promosi untuk ID barang " + id_barang);
-                                }
-                            }
-                        }
-            
-                        connection.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        }
+                    double nilai_promosi = getPromosiBarang(connection,id_barang);
+                    double harga_barang = getHargaBarang(connection,id_barang);
+                    double totalHargaPromosi = nilai_promosi * qty;
+                    double totalHargaBarang = (harga_barang * qty) - totalHargaPromosi;
+                    
+                    System.out.println("Total Harga Promosi :" +totalHargaPromosi);
+                    System.out.println("Total Harga Barang :" +totalHargaBarang);
+                    
+                    //Simpan Data Ke array
+                    myObjList.add(new Item(id_barang,qty,nilai_promosi)); 
+                    
                     isLanjutkan = getYesorNo("Tambah Barang? (y/n): ");
-                    pengiriman();
+                    terminalInput.nextLine();
                     // Menghitung total belanja
-                    }
+        }
+        
+        System.out.println("Iterating using for-each loop:");
+        for (Item model : myObjList) {
+            System.out.println("Kode Barang: " + model.getKodeBarang() + ", Qty: " + model.getQty()+ ", Promosi: "+model.getPromosi());
+        }
+        
+        System.out.println("Biaya Pengiriman ="+pengiriman());
+        
     }
+    
+    /**
+     * Method get harga barang
+     */
+    private static double getHargaBarang(Connection connection, String id_barang) throws SQLException {
+        double harga_barang = 0; // Inisialisasi hargaBarang dengan nilai default
+
+        String query = "SELECT harga_barang FROM barang WHERE id_barang = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, id_barang);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    harga_barang = resultSet.getDouble("harga_barang");
+                } else {
+                    System.out.println("Barang dengan ID " + id_barang + " tidak ditemukan.");
+                }
+            }
+        }
+        return harga_barang;
+    }
+    
+    /**
+     * Method get harga barang
+     */
+    private static double getPromosiBarang(Connection connection, String id_barang) throws SQLException {
+        double nilai_promosi = 0; // Inisialisasi hargaBarang dengan nilai default
+
+        String query = "SELECT nilai_promosi FROM promosi WHERE id_barang = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, id_barang);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Jika terdapat promosi, tampilkan nilai_promosi
+                    nilai_promosi = resultSet.getDouble("nilai_promosi");
+                    // System.out.println("Promosi ditemukan! Nilai promosi: " + nilai_promosi);
+                    System.out.println("Terdapat potongan harga sebesar: " + nilai_promosi);
+                } else {
+                    // Jika tidak terdapat promosi
+                    System.out.println("Tidak ada promosi untuk ID barang " + id_barang);
+                }
+            }
+        }
+        return nilai_promosi;
+    }
+    
+    
     
     
     /**
      * Method untuk metode pengiriman
      */
-    public static void pengiriman(){
+    public static double pengiriman(){
         Scanner terminalInput = new Scanner(System.in);
         
         System.out.println("Pilih metode pengiriman: ");
@@ -135,16 +210,20 @@ public class TestLogin {
         System.out.println("3. Ojek Online");
         String metode = terminalInput.nextLine();
         
+        double biaya_pengiriman = 0;
+        
         switch(metode){
             case "1" :
-                System.out.println("Metode Pengiriman dengan kurir toko");
+                biaya_pengiriman = 10000;
                 break;
             case "2" :
-                System.out.println("Ambil barang belian Anda di toko");
+                biaya_pengiriman = 0;
                 break;
             case "3" :
-                System.out.println("Metode Pengiriman dengan ojek online");
+                biaya_pengiriman = 0;
         }
+        
+        return biaya_pengiriman;
     }
     
 
