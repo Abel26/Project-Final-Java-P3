@@ -2,6 +2,8 @@ import java.sql.*;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class TestLogin {
@@ -17,6 +19,7 @@ public class TestLogin {
             PreparedStatement prep = connection.prepareStatement("insert into pelanggan values (?, ?, ? );");
             Scanner terminalInput = new Scanner(System.in);
             
+            String uniqueCode = generateUniqueCode();
             boolean isLanjutkan = true;
             while(isLanjutkan){
                 System.out.print("Id Sales: ");
@@ -55,7 +58,7 @@ public class TestLogin {
                     
                     // Input data pemesanan
                     TestLogin instance = new TestLogin();
-                    instance.inputDataPemesanan();
+                    instance.inputDataPemesanan(id_sales2, uniqueCode, nomor_hp);
                     
                     // Cetak Resi
 
@@ -80,16 +83,49 @@ public class TestLogin {
         }
     }
     
+    public static String generateUniqueCode() {
+        // Get current timestamp
+        long timestamp = System.currentTimeMillis();
+
+        // Format timestamp as a string
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        String timestampString = dateFormat.format(new Date(timestamp));
+
+        // Create a unique code by combining timestamp with additional characters
+        String additionalChars = generateRandomChars(3); // You can adjust the number of additional characters
+        String uniqueCode = timestampString + additionalChars;
+
+        return uniqueCode;
+    }
+
+    public static String generateRandomChars(int length) {
+        // Define characters for additional part of the code
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        // Create a StringBuilder to store random characters
+        StringBuilder randomChars = new StringBuilder(length);
+
+        // Generate random characters
+        for (int i = 0; i < length; i++) {
+            int index = (int) (Math.random() * characters.length());
+            randomChars.append(characters.charAt(index));
+        }
+
+        return randomChars.toString();
+    }
+    
     public class Item {
         
         private String KodeBarang;
         private int Qty;
-        private Double Promosi;
+        private String Promosi;
+        private double totalHargaPromosi;
         
-        public Item(String KodeBarang, int Qty, Double Promosi){
+        public Item(String KodeBarang, int Qty, String Promosi, double totalHargaPromosi){
             this.KodeBarang=KodeBarang;
             this.Qty=Qty;
             this.Promosi=Promosi;
+            this.totalHargaPromosi=totalHargaPromosi;
         }
         
         
@@ -101,21 +137,26 @@ public class TestLogin {
             return Qty;
         }
         
-        public double getPromosi(){
+        public String getPromosi(){
             return Promosi;
+        }
+        
+        public Double getTotalHargaPromosi(){
+            return totalHargaPromosi;
         }
     }
     
     /**
      * Method untuk input data pesanan
      */
-    public void inputDataPemesanan()throws Exception{
+    public void inputDataPemesanan(String SalesId, String UniqueCode, String nomor_hp)throws Exception{
         boolean isLanjutkan = true;
         Scanner terminalInput = new Scanner(System.in);
         Connection connection = DriverManager.getConnection(JDBC_URL);
         
         List<Item> myObjList =  new ArrayList<Item>();
-        double totalHarga = 0;
+        double totalBelanja = 0;
+        
         while(isLanjutkan){
                     System.out.println("\nINPUT DATA PEMESANAN");
                     
@@ -125,29 +166,66 @@ public class TestLogin {
                     System.out.print("Input QTY barang: ");
                     int qty = terminalInput.nextInt();
                     
+                    String id_promosi = getIdPromosiBarang(connection,id_barang);
                     double nilai_promosi = getPromosiBarang(connection,id_barang);
                     double harga_barang = getHargaBarang(connection,id_barang);
                     double totalHargaPromosi = nilai_promosi * qty;
                     double totalHargaBarang = (harga_barang * qty) - totalHargaPromosi;
                     
-                    System.out.println("Total Harga Promosi :" +totalHargaPromosi);
-                    System.out.println("Total Harga Barang :" +totalHargaBarang);
+                    totalBelanja += totalHargaBarang;
                     
                     //Simpan Data Ke array
-                    myObjList.add(new Item(id_barang,qty,nilai_promosi)); 
+                    myObjList.add(new Item(id_barang,qty,id_promosi,totalHargaPromosi)); 
                     
                     isLanjutkan = getYesorNo("Tambah Barang? (y/n): ");
                     terminalInput.nextLine();
                     // Menghitung total belanja
         }
+            
+        double biaya_pengiriman = pengiriman();
+        double totalBayar = totalBelanja + biaya_pengiriman;
+        String id_pembayaran = "idbayar"; //ABEL TAI, ini dibikin kayak getIdPembayaran Contohnya bisa liat method pengiriman(). 
+        String Jenis_pengiriman = "jeniskirim"; // ABEL TAI, ini ambil kayak contoh method getIdPromosiBarang cuman yang di select dari table Ekpedisi
+        String id_pelanggan = "idpelanggan"; // ABEL TAI, ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
+        // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
         
-        System.out.println("Iterating using for-each loop:");
         for (Item model : myObjList) {
-            System.out.println("Kode Barang: " + model.getKodeBarang() + ", Qty: " + model.getQty()+ ", Promosi: "+model.getPromosi());
+            insertDBTransaksi(connection,UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, nomor_hp);
+        }       
+    }
+    
+    /**
+     * Method insert DB 
+     */
+    private static void insertDBTransaksi(Connection connection, String id_transaksi,String id_barang, String id_promosi, double total_belanja,
+        double biaya_pengiriman, double total_diskon, double total_bayar, String id_pembayaran, String id_sales, String id_ekpedisi
+        ,String id_pelanggan) throws SQLException {
+
+        String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, id_transaksi);
+            preparedStatement.setString(2, id_barang);
+            preparedStatement.setString(3, id_promosi);
+            preparedStatement.setDouble(4, total_belanja);
+            preparedStatement.setDouble(5, biaya_pengiriman);
+            preparedStatement.setDouble(6, total_diskon);
+            preparedStatement.setDouble(7, total_bayar);
+            preparedStatement.setString(8, id_pembayaran);
+            preparedStatement.setString(9, id_sales);
+            preparedStatement.setString(10, id_ekpedisi);
+            preparedStatement.setString(11, id_pelanggan);
+            
+            // Execute the insert query
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Data inserted successfully!");
+            } else {
+                System.out.println("Failed to insert data.");
+            }
         }
-        
-        System.out.println("Biaya Pengiriman ="+pengiriman());
-        
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
     
     /**
@@ -172,7 +250,26 @@ public class TestLogin {
     }
     
     /**
-     * Method get harga barang
+     * Method get id promosi
+     */
+    private static String getIdPromosiBarang(Connection connection, String id_barang) throws SQLException {
+        String id_promosi =""; // Inisialisasi hargaBarang dengan nilai default
+
+        String query = "SELECT id_promosi FROM promosi WHERE id_barang = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, id_barang);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Jika terdapat promosi, tampilkan nilai_promosi
+                    id_promosi = resultSet.getString("id_promosi");
+                }
+            }
+        }
+        return id_promosi;
+    }
+    
+    /**
+     * Method get promosi barang
      */
     private static double getPromosiBarang(Connection connection, String id_barang) throws SQLException {
         double nilai_promosi = 0; // Inisialisasi hargaBarang dengan nilai default
@@ -184,19 +281,11 @@ public class TestLogin {
                 if (resultSet.next()) {
                     // Jika terdapat promosi, tampilkan nilai_promosi
                     nilai_promosi = resultSet.getDouble("nilai_promosi");
-                    // System.out.println("Promosi ditemukan! Nilai promosi: " + nilai_promosi);
-                    System.out.println("Terdapat potongan harga sebesar: " + nilai_promosi);
-                } else {
-                    // Jika tidak terdapat promosi
-                    System.out.println("Tidak ada promosi untuk ID barang " + id_barang);
                 }
             }
         }
         return nilai_promosi;
     }
-    
-    
-    
     
     /**
      * Method untuk metode pengiriman
