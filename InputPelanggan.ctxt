@@ -1,0 +1,9 @@
+#BlueJ class context
+comment0.target=InputPelanggan
+comment1.params=args
+comment1.target=void\ main(java.lang.String[])
+comment2.params=conn\ id_pelanggan
+comment2.target=boolean\ idPelangganExists(java.sql.Connection,\ java.lang.String)
+comment3.params=message
+comment3.target=boolean\ getYesOrNo(java.lang.String)
+numComments=4

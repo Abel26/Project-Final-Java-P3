@@ -14,13 +14,12 @@ public class TestLogin {
             PreparedStatement prep = connection.prepareStatement("insert into pelanggan values (?, ?, ? );");
             Scanner terminalInput = new Scanner(System.in);
             
-            
             boolean isLanjutkan = true;
             while(isLanjutkan){
-                System.out.print("Id: ");
+                System.out.print("Id Sales: ");
                 String id_sales = terminalInput.nextLine();
     
-                System.out.print("Nama: ");
+                System.out.print("Nama Sales: ");
                 String nama_sales = terminalInput.nextLine();
     
                 if (checkLogin(connection, id_sales, nama_sales)) {
@@ -28,19 +27,42 @@ public class TestLogin {
                     
                     System.out.println("");
                     
-                    System.out.println("Ingin berbelanja online / offline");
+                    System.out.print("Ingin berbelanja online / offline ? (online / offline): ");
                     String pertanyaan = terminalInput.nextLine();
                     
-                    System.out.println("Nama Pelanggan: ");
+                    // Input data pelanggan
+                    System.out.print("Nama Pelanggan: ");
                     String nama_pelanggan = terminalInput.nextLine();
                     
-                    System.out.println("No Hp Aktif: ");
+                    System.out.print("No Hp Aktif: ");
                     String nomor_hp = terminalInput.nextLine();
                     
                     prep.setString(1,nama_pelanggan);
                     prep.setString(2,nomor_hp);
                     
-                    terminalInput.nextLine();
+                    System.out.println("\nSILAHKAN INPUT SALES YANG SEDANG BERTUGAS");
+                    
+                    System.out.print("Id Sales: ");
+                    String id_sales2 = terminalInput.nextLine();
+        
+                    System.out.print("Nama Sales: ");
+                    String nama_sales2 = terminalInput.nextLine();
+                    
+                    System.out.println("\nSELAMAT BERTUGAS " + nama_sales2);
+                    
+                    // Input data pemesanan
+                    inputDataPemesanan();
+
+                    // terminalInput.nextLine();
+                    
+                    
+                } else {
+                    System.out.println("Id/Nama salah. Login gagal.");
+                }  
+                    
+                    
+                isLanjutkan = getYesorNo("Input ulang? (y/n): ");
+            }
                     connection.setAutoCommit(false);
                     prep.executeBatch();
                     connection.setAutoCommit(true);
@@ -48,18 +70,83 @@ public class TestLogin {
                     // Menutup ResultSet, Statement, dan Koneksi
                     // test.close();
                     connection.close();
-                    
-                    
-                } else {
-                    System.out.println("Id/Nama salah. Login gagal.");
-                }  
-                isLanjutkan = getYesorNo("Input ulang? (y/n): ");
-            }
-            
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+    
+    
+    /**
+     * Method untuk input data pesanan
+     */
+    public static void inputDataPemesanan()throws Exception{
+        boolean isLanjutkan = true;
+        Scanner terminalInput = new Scanner(System.in);
+        Connection connection = DriverManager.getConnection(JDBC_URL);
+        while(isLanjutkan){
+                    System.out.println("\nINPUT DATA PEMESANAN");
+                    
+                    System.out.print("Input id barang: ");
+                    String id_barang = terminalInput.nextLine();
+                    
+                    System.out.print("Input QTY barang: ");
+                    int qty = terminalInput.nextInt();
+                    
+                    // Melakukan koneksi ke database
+                    try {
+                        // Mengecek promosi berdasarkan ID barang
+                        String query = "SELECT nilai_promosi FROM promosi WHERE id_barang = ?";
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                            preparedStatement.setString(1, id_barang);
+            
+                            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                                if (resultSet.next()) {
+                                    // Jika terdapat promosi, tampilkan nilai_promosi
+                                    double nilai_promosi = resultSet.getDouble("nilai_promosi");
+                                    // System.out.println("Promosi ditemukan! Nilai promosi: " + nilai_promosi);
+                                    System.out.println("Terdapat potongan harga sebesar: " + nilai_promosi);
+                                } else {
+                                    // Jika tidak terdapat promosi
+                                    System.out.println("Tidak ada promosi untuk ID barang " + id_barang);
+                                }
+                            }
+                        }
+            
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        }
+                    isLanjutkan = getYesorNo("Tambah Barang? (y/n): ");
+                    pengiriman();
+                    // Menghitung total belanja
+                    }
+    }
+    
+    
+    /**
+     * Method untuk metode pengiriman
+     */
+    public static void pengiriman(){
+        Scanner terminalInput = new Scanner(System.in);
+        
+        System.out.println("Pilih metode pengiriman: ");
+        System.out.println("1. Kurir Toko");
+        System.out.println("2. Ambil Sendiri");
+        System.out.println("3. Ojek Online");
+        String metode = terminalInput.nextLine();
+        
+        switch(metode){
+            case "1" :
+                System.out.println("Metode Pengiriman dengan kurir toko");
+                break;
+            case "2" :
+                System.out.println("Ambil barang belian Anda di toko");
+                break;
+            case "3" :
+                System.out.println("Metode Pengiriman dengan ojek online");
+        }
+    }
+    
 
     public static boolean checkLogin(Connection connection, String id_sales, String nama_sales) {
         String query = "SELECT COUNT(*) FROM sales WHERE id_sales = ? AND nama_sales = ?"; // Kolom dan tabel sudah disesuaikan
