@@ -185,7 +185,8 @@ public class TestLogin {
         double biaya_pengiriman = pengiriman();
         double totalBayar = totalBelanja + biaya_pengiriman;
         String id_pembayaran = "idbayar"; //ABEL TAI, ini dibikin kayak getIdPembayaran Contohnya bisa liat method pengiriman(). 
-        String Jenis_pengiriman = "jeniskirim"; // ABEL TAI, ini ambil kayak contoh method getIdPromosiBarang cuman yang di select dari table Ekpedisi
+        // String Jenis_pengiriman = jenisKirim(connection,id_ekspedisi3); // ABEL TAI, ini ambil kayak contoh method getIdPromosiBarang cuman yang di select dari table Ekpedisi
+        String Jenis_pengiriman = "coba";
         String id_pelanggan = "idpelanggan"; // ABEL TAI, ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
         // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
         
@@ -226,6 +227,25 @@ public class TestLogin {
         catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Method get id_ekspedisi
+     */
+    private static String jenisKirim(Connection connection, String id_ekspedisi3) throws SQLException {
+        String id_ekspedisi2 =""; 
+
+        String query = "SELECT id_ekspedisi FROM ekspedisi WHERE nama_ekspedisi = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, id_ekspedisi2);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Jika terdapat ekspedisi, tampilkan jenis_pengiriman
+                    id_ekspedisi2 = resultSet.getString("id_ekspedisi2");
+                }
+            }
+        }
+        return id_ekspedisi2;
     }
     
     /**
@@ -288,6 +308,26 @@ public class TestLogin {
     }
     
     /**
+     * Method untuk get harga ekspedisi
+     */
+    
+    public static double getHargaEkspedisi(Connection connection, int id_ekspedisi) throws SQLException {
+        double jumlah_pembayaran = 0; // Inisialisasi harga dengan nilai default
+
+        String query = "SELECT jumlah_pembayaran FROM ekspedisi WHERE id_ekspedisi = ?";
+        try (var preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, id_ekspedisi);
+            try (var resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Jika terdapat data produk, ambil nilai harga
+                    jumlah_pembayaran = resultSet.getDouble("jumlah_pembayaran");
+                }
+            }
+        }
+        return jumlah_pembayaran;
+    }
+    
+    /**
      * Method untuk metode pengiriman
      */
     public static double pengiriman(){
@@ -303,10 +343,24 @@ public class TestLogin {
         
         switch(metode){
             case "1" :
-                biaya_pengiriman = 10000;
+                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 1
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)) {
+                    int id_ekspedisi = 1; // ID yang sesuai dengan data di database
+                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
+                } catch (SQLException e) {
+                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
+                }
+                // biaya_pengiriman = 10000;
                 break;
             case "2" :
-                biaya_pengiriman = 0;
+                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 2
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)) {
+                    int id_ekspedisi = 2; // ID yang sesuai dengan data di database
+                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
+                } catch (SQLException e) {
+                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
+                }
+                // biaya_pengiriman = 0;
                 break;
             case "3" :
                 biaya_pengiriman = 0;
