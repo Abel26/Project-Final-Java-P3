@@ -36,7 +36,8 @@ public class TestLogin {
                     System.out.print("Ingin berbelanja online / offline ? (online / offline): ");
                     String pertanyaan = terminalInput.nextLine();
                     
-                    // Input data pelanggan
+                    if(pertanyaan.equalsIgnoreCase("online") && pertanyaan.equalsIgnoreCase("online")){
+                        // Input data pelanggan
                     System.out.print("Nama Pelanggan: ");
                     String nama_pelanggan = terminalInput.nextLine();
                     
@@ -54,15 +55,24 @@ public class TestLogin {
                     System.out.print("Nama Sales: ");
                     String nama_sales2 = terminalInput.nextLine();
                     
-                    System.out.println("\nSELAMAT BERTUGAS " + nama_sales2);
+                        if(checkLogin(connection, id_sales2, nama_sales2)){
+                            System.out.println("\nSELAMAT BERTUGAS " + nama_sales2);
+                            // Input data pemesanan
+                            TestLogin instance = new TestLogin();
+                            instance.inputDataPemesanan(id_sales2, uniqueCode, nomor_hp);
+                            
+                            // Cetak Resi
+        
+                            // terminalInput.nextLine();
+                        }else{
+                            System.out.println("id_sales " + id_sales2 + "Tidak terdaftar");
+                        }
+                      
+                    }else{
+                        System.out.println("Inputan salah!!!");
+                    }
                     
-                    // Input data pemesanan
-                    TestLogin instance = new TestLogin();
-                    instance.inputDataPemesanan(id_sales2, uniqueCode, nomor_hp);
-                    
-                    // Cetak Resi
-
-                    // terminalInput.nextLine();                    
+                                      
                     
                 } else {
                     System.out.println("Id/Nama salah. Login gagal.");
