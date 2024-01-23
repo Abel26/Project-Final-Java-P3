@@ -18,8 +18,9 @@ public class TestLogin {
             Statement stat = connection.createStatement();
             PreparedStatement prep = connection.prepareStatement("insert into pelanggan values (?, ?, ? );");
             Scanner terminalInput = new Scanner(System.in);
-            
+            //ID Transaksi
             String uniqueCode = generateUniqueCode();
+            
             boolean isLanjutkan = true;
             while(isLanjutkan){
                 System.out.print("Id Sales: ");
@@ -194,16 +195,107 @@ public class TestLogin {
             
         double biaya_pengiriman = pengiriman();
         double totalBayar = totalBelanja + biaya_pengiriman;
-        String id_pembayaran = "idbayar"; //ABEL TAI, ini dibikin kayak getIdPembayaran Contohnya bisa liat method pengiriman(). 
-        // String Jenis_pengiriman = jenisKirim(connection,id_ekspedisi3); // ABEL TAI, ini ambil kayak contoh method getIdPromosiBarang cuman yang di select dari table Ekpedisi
-        String Jenis_pengiriman = "coba";
-        String id_pelanggan = "idpelanggan"; // ABEL TAI, ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
+        String id_pembayaran = pembayaran();
+        String id_pelanggan = getIdPelanggan(nomor_hp);
+        String Jenis_pengiriman = "Ambil Toko";
+        // ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
         // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
         
         for (Item model : myObjList) {
-            insertDBTransaksi(connection,UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, nomor_hp);
+            insertDBTransaksi(connection,UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, id_pelanggan);
         }       
     }
+    
+    /**
+     * 
+     * Method get ID Pelanggan
+     */
+    
+    public static String getIdPelanggan(String NomorHP) throws SQLException {
+        
+        String IDPelanggan = "Non Member";
+        String query = "SELECT id_pelanggan FROM pelanggan WHERE nomor_hp = ?";
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)){
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, NomorHP);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        if (resultSet.next()) {
+                            // Jika terdapat ekspedisi, tampilkan jenis_pengiriman
+                            IDPelanggan = resultSet.getString("id_pelanggan");
+                        }
+                    }
+                }}
+        return IDPelanggan;
+    }
+    
+    
+    
+    /**
+     * 
+     * Method ID Pembayaran
+     */
+    
+    public static String pembayaran() throws SQLException {
+        Scanner terminalInput = new Scanner(System.in);
+        
+        System.out.println("Pilih metode Pembayaran: ");
+        System.out.println("1. Cash");
+        System.out.println("2. Card");
+        System.out.println("3. QRIS");
+        String metode = terminalInput.nextLine();
+        
+        double biaya_pengiriman = 0;
+        String JenisPembayaran = "";
+        String IDPembayaran = "";
+        String query = "";
+        
+        switch(metode){
+            case "1" :
+                JenisPembayaran = "cash";
+                query = "SELECT id_pembayaran FROM jenis_pembayaran WHERE nama_pembayaran = ?";
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)){
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, JenisPembayaran);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        if (resultSet.next()) {
+                            // Jika terdapat ekspedisi, tampilkan jenis_pengiriman
+                            IDPembayaran = resultSet.getString("id_pembayaran");
+                        }
+                    }
+                }}
+                break;
+            case "2" :
+                JenisPembayaran = "card";
+                query = "SELECT id_pembayaran FROM jenis_pembayaran WHERE nama_pembayaran = ?";
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)){
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, JenisPembayaran);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        if (resultSet.next()) {
+                            // Jika terdapat ekspedisi, tampilkan jenis_pengiriman
+                            IDPembayaran = resultSet.getString("id_pembayaran");
+                        }
+                    }
+                }}
+                break;
+            case "3" :
+                JenisPembayaran = "card";
+                query = "SELECT id_pembayaran FROM jenis_pembayaran WHERE nama_pembayaran = ?";
+                try (Connection connection = DriverManager.getConnection(JDBC_URL)){
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, JenisPembayaran);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        if (resultSet.next()) {
+                            // Jika terdapat ekspedisi, tampilkan jenis_pengiriman
+                            IDPembayaran = resultSet.getString("id_pembayaran");
+                        }
+                    }
+                }}
+        }
+        
+        return IDPembayaran;
+    }
+    
     
     /**
      * Method insert DB 
