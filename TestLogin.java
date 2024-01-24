@@ -102,11 +102,7 @@ public class TestLogin {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
         String timestampString = dateFormat.format(new Date(timestamp));
 
-        // Create a unique code by combining timestamp with additional characters
-        String additionalChars = generateRandomChars(3); // You can adjust the number of additional characters
-        String uniqueCode = timestampString + additionalChars;
-
-        return uniqueCode;
+        return timestampString;
     }
 
     public static String generateRandomChars(int length) {
@@ -242,11 +238,13 @@ public class TestLogin {
         String Jenis_pengiriman = getJenisPengiriman(id_ekspedisi);
         // ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
         // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
+        for (Item model : myObjList){
+            System.out.println(model.getKodeBarang() + "|" + model.getPromosi()+ "|" + model.getTotalHargaPromosi());
+        }
         
         for (Item model : myObjList) {
-            insertDBTransaksi(connection,UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, id_pelanggan);
+            insertDBTransaksi(UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, id_pelanggan);
         }       
-        connection.close();
     }
     
     /**
@@ -265,7 +263,6 @@ public class TestLogin {
                  }
              }
             }
-             connection.close();
         }
         return nama_ekspedisi;
     }
@@ -290,7 +287,7 @@ public class TestLogin {
                         }
                     }
                 }
-            connection.close();}
+            }
         return IDPelanggan;
     }
     
@@ -358,8 +355,8 @@ public class TestLogin {
                             IDPembayaran = resultSet.getString("id_pembayaran");
                         }
                     }
-                }connection.close();}
-                
+                }
+            }
         }
         
         return IDPembayaran;
@@ -369,39 +366,37 @@ public class TestLogin {
     /**
      * Method insert DB 
      */
-    private static void insertDBTransaksi(Connection connection, String id_transaksi,String id_barang, String id_promosi, double total_belanja,
+    private static void insertDBTransaksi(String id_transaksi,String id_barang, String id_promosi, double total_belanja,
         double biaya_pengiriman, double total_diskon, double total_bayar, String id_pembayaran, String id_sales, String id_ekpedisi
         ,String id_pelanggan) throws SQLException {
-
-        String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, id_transaksi);
-            preparedStatement.setString(2, id_barang);
-            preparedStatement.setString(3, id_promosi);
-            preparedStatement.setDouble(4, total_belanja);
-            preparedStatement.setDouble(5, biaya_pengiriman);
-            preparedStatement.setDouble(6, total_diskon);
-            preparedStatement.setDouble(7, total_bayar);
-            preparedStatement.setString(8, id_pembayaran);
-            preparedStatement.setString(9, id_sales);
-            preparedStatement.setString(10, id_ekpedisi);
-            preparedStatement.setString(11, id_pelanggan);
+        try (Connection connection = DriverManager.getConnection(JDBC_URL)){
+            String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, id_transaksi);
+                preparedStatement.setString(2, id_barang);
+                preparedStatement.setString(3, id_promosi);
+                preparedStatement.setDouble(4, total_belanja);
+                preparedStatement.setDouble(5, biaya_pengiriman);
+                preparedStatement.setDouble(6, total_diskon);
+                preparedStatement.setDouble(7, total_bayar);
+                preparedStatement.setString(8, id_pembayaran);
+                preparedStatement.setString(9, id_sales);
+                preparedStatement.setString(10, id_ekpedisi);
+                preparedStatement.setString(11, id_pelanggan);
             
             // Execute the insert query
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Data inserted successfully!");
+                System.out.println("Transaksi Berhasil Tersimpan");
             } else {
-                System.out.println("Failed to insert data.");
+                System.out.println("Gagal Simpan Transaksi Ke Database");
             }
         }
         catch (SQLException e) {
             e.printStackTrace();
-        }
-        connection.close();
+        }}        
     }
     
-    // End insert db
     
     /**
      * Method get id_ekspedisi
@@ -418,10 +413,8 @@ public class TestLogin {
                     id_ekspedisi2 = resultSet.getString("id_ekspedisi2");
                 }
             }
-        connection.close();
-    }
-        return id_ekspedisi2;
-        
+        }
+        return id_ekspedisi2;        
     }
     
     /**
@@ -441,7 +434,7 @@ public class TestLogin {
                     System.out.println("Barang dengan ID " + id_barang + " tidak ditemukan.");
                 }
             }
-        connection.close();}
+        }
         return harga_barang;
     }
     
@@ -460,7 +453,7 @@ public class TestLogin {
                     id_promosi = resultSet.getString("id_promosi");
                 }
             }
-        connection.close();}
+        }
         return id_promosi;
     }
     
@@ -479,7 +472,7 @@ public class TestLogin {
                     nilai_promosi = resultSet.getDouble("nilai_promosi");
                 }
             }
-        connection.close();}
+        }
         return nilai_promosi;
     }
     
@@ -499,7 +492,7 @@ public class TestLogin {
                     jumlah_pembayaran = resultSet.getDouble("jumlah_pembayaran");
                 }
             }
-        connection.close();}
+        }
         return jumlah_pembayaran;
     }
     
