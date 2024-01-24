@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 
 
 public class TestLogin {
@@ -103,22 +104,6 @@ public class TestLogin {
         String timestampString = dateFormat.format(new Date(timestamp));
 
         return timestampString;
-    }
-
-    public static String generateRandomChars(int length) {
-        // Define characters for additional part of the code
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-        // Create a StringBuilder to store random characters
-        StringBuilder randomChars = new StringBuilder(length);
-
-        // Generate random characters
-        for (int i = 0; i < length; i++) {
-            int index = (int) (Math.random() * characters.length());
-            randomChars.append(characters.charAt(index));
-        }
-
-        return randomChars.toString();
     }
     
     public class Item {
@@ -242,9 +227,31 @@ public class TestLogin {
             System.out.println(model.getKodeBarang() + "|" + model.getPromosi()+ "|" + model.getTotalHargaPromosi());
         }
         
-        for (Item model : myObjList) {
-            insertDBTransaksi(UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, id_pelanggan);
-        }       
+        // initialize a Random object somewhere; you should only need one
+        Random random = new Random();
+        // generate a random integer from 0 to 899, then add 100
+        int randNum = random.nextInt(1000000000);
+        
+        Connection c = DriverManager.getConnection(JDBC_URL);
+        String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan,id_group_transaksi) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        PreparedStatement ps = c.prepareStatement(query);
+        for(Item model : myObjList){
+            ps.setString(1, Integer.toString(randNum));
+            ps.setString(2, model.getKodeBarang());
+            ps.setString(3, model.getPromosi());
+            ps.setDouble(4, totalBelanja);
+            ps.setDouble(5, biaya_pengiriman);
+            ps.setDouble(6, model.getTotalHargaPromosi());
+            ps.setDouble(7, totalBayar);
+            ps.setString(8, id_pembayaran);
+            ps.setString(9, SalesId);
+            ps.setString(10, Jenis_pengiriman);
+            ps.setString(11, id_pelanggan); 
+            ps.setString(12, UniqueCode);
+            ps.addBatch();
+            randNum++;
+        }
+        ps.executeBatch();       
     }
     
     /**
