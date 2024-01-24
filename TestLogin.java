@@ -193,18 +193,83 @@ public class TestLogin {
                     // Menghitung total belanja
         }
             
-        double biaya_pengiriman = pengiriman();
+        System.out.println("Pilih metode pengiriman: ");
+        System.out.println("1. Kurir Toko");
+        System.out.println("2. Ambil Sendiri");
+        System.out.println("3. Ojek Online");
+        String id_ekspedisi = terminalInput.nextLine();
+        double biaya_pengiriman = 0;
+        switch(id_ekspedisi){
+            case "1" :
+                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 1
+                try (connection) {
+                    String id_ekspedisi2 = "1"; // ID yang sesuai dengan data di database
+                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
+                } catch (SQLException e) {
+                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
+                }
+                // biaya_pengiriman = 10000;
+                break;
+            case "2" :
+                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 2
+                try (connection) {
+                    String id_ekspedisi2 = "2"; // ID yang sesuai dengan data di database
+                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
+                } catch (SQLException e) {
+                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
+                }
+                break;
+            case "3" :
+                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 3
+                try (connection) {
+                    String id_ekspedisi2 = "3"; // ID yang sesuai dengan data di database
+                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
+                } catch (SQLException e) {
+                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
+                }
+                break;
+                default:
+                System.out.println("ERROR");
+        }
+        
+        // double biaya_pengiriman = pengiriman();
         double totalBayar = totalBelanja + biaya_pengiriman;
         String id_pembayaran = pembayaran();
+        // Output resi
+        // System.out.println("ID Transaksi: " + id_transaksi);
+        System.out.println("Total Belanja:" + totalBayar);
         String id_pelanggan = getIdPelanggan(nomor_hp);
-        String Jenis_pengiriman = "Ambil Toko";
+        String Jenis_pengiriman = getJenisPengiriman(id_ekspedisi);
         // ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
         // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
         
         for (Item model : myObjList) {
             insertDBTransaksi(connection,UniqueCode,model.getKodeBarang(), model.getPromosi(), totalBelanja,biaya_pengiriman,model.getTotalHargaPromosi(),totalBayar,id_pembayaran, SalesId, Jenis_pengiriman, id_pelanggan);
         }       
+        connection.close();
     }
+    
+    /**
+     * Method get jenis_pengiriman
+     */
+    private static String getJenisPengiriman(String id_ekspedisi)throws SQLException{
+        String nama_ekspedisi = "";
+        
+        String query = "SELECT nama_ekspedisi FROM ekspedisi WHERE id_ekspedisi = ?";
+        try(Connection connection = DriverManager.getConnection(JDBC_URL)){
+            try(PreparedStatement preparedStatement = connection.prepareStatement(query)){
+                preparedStatement.setString(1, id_ekspedisi);
+                 try(ResultSet resultSet = preparedStatement.executeQuery()){
+                 if(resultSet.next()){
+                     nama_ekspedisi = resultSet.getString("nama_ekspedisi");
+                 }
+             }
+            }
+             connection.close();
+        }
+        return nama_ekspedisi;
+    }
+    
     
     /**
      * 
@@ -224,7 +289,8 @@ public class TestLogin {
                             IDPelanggan = resultSet.getString("id_pelanggan");
                         }
                     }
-                }}
+                }
+            connection.close();}
         return IDPelanggan;
     }
     
@@ -238,10 +304,12 @@ public class TestLogin {
     public static String pembayaran() throws SQLException {
         Scanner terminalInput = new Scanner(System.in);
         
-        System.out.println("Pilih metode Pembayaran: ");
+        System.out.println("Metode Pembayaran: ");
         System.out.println("1. Cash");
         System.out.println("2. Card");
         System.out.println("3. QRIS");
+        
+        System.out.println("Pilih metode Pembayaran: ");
         String metode = terminalInput.nextLine();
         
         double biaya_pengiriman = 0;
@@ -279,7 +347,7 @@ public class TestLogin {
                 }}
                 break;
             case "3" :
-                JenisPembayaran = "card";
+                JenisPembayaran = "qris";
                 query = "SELECT id_pembayaran FROM jenis_pembayaran WHERE nama_pembayaran = ?";
                 try (Connection connection = DriverManager.getConnection(JDBC_URL)){
                 try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -290,7 +358,8 @@ public class TestLogin {
                             IDPembayaran = resultSet.getString("id_pembayaran");
                         }
                     }
-                }}
+                }connection.close();}
+                
         }
         
         return IDPembayaran;
@@ -329,7 +398,10 @@ public class TestLogin {
         catch (SQLException e) {
             e.printStackTrace();
         }
+        connection.close();
     }
+    
+    // End insert db
     
     /**
      * Method get id_ekspedisi
@@ -346,8 +418,10 @@ public class TestLogin {
                     id_ekspedisi2 = resultSet.getString("id_ekspedisi2");
                 }
             }
-        }
+        connection.close();
+    }
         return id_ekspedisi2;
+        
     }
     
     /**
@@ -367,7 +441,7 @@ public class TestLogin {
                     System.out.println("Barang dengan ID " + id_barang + " tidak ditemukan.");
                 }
             }
-        }
+        connection.close();}
         return harga_barang;
     }
     
@@ -386,7 +460,7 @@ public class TestLogin {
                     id_promosi = resultSet.getString("id_promosi");
                 }
             }
-        }
+        connection.close();}
         return id_promosi;
     }
     
@@ -405,7 +479,7 @@ public class TestLogin {
                     nilai_promosi = resultSet.getDouble("nilai_promosi");
                 }
             }
-        }
+        connection.close();}
         return nilai_promosi;
     }
     
@@ -413,63 +487,27 @@ public class TestLogin {
      * Method untuk get harga ekspedisi
      */
     
-    public static double getHargaEkspedisi(Connection connection, int id_ekspedisi) throws SQLException {
+    public static double getHargaEkspedisi(Connection connection, String id_ekspedisi) throws SQLException {
         double jumlah_pembayaran = 0; // Inisialisasi harga dengan nilai default
 
         String query = "SELECT jumlah_pembayaran FROM ekspedisi WHERE id_ekspedisi = ?";
         try (var preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, id_ekspedisi);
+            preparedStatement.setString(1, id_ekspedisi);
             try (var resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     // Jika terdapat data produk, ambil nilai harga
                     jumlah_pembayaran = resultSet.getDouble("jumlah_pembayaran");
                 }
             }
-        }
+        connection.close();}
         return jumlah_pembayaran;
     }
     
     /**
      * Method untuk metode pengiriman
      */
-    public static double pengiriman(){
-        Scanner terminalInput = new Scanner(System.in);
-        
-        System.out.println("Pilih metode pengiriman: ");
-        System.out.println("1. Kurir Toko");
-        System.out.println("2. Ambil Sendiri");
-        System.out.println("3. Ojek Online");
-        String metode = terminalInput.nextLine();
-        
-        double biaya_pengiriman = 0;
-        
-        switch(metode){
-            case "1" :
-                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 1
-                try (Connection connection = DriverManager.getConnection(JDBC_URL)) {
-                    int id_ekspedisi = 1; // ID yang sesuai dengan data di database
-                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
-                } catch (SQLException e) {
-                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
-                }
-                // biaya_pengiriman = 10000;
-                break;
-            case "2" :
-                // Memanggil metode getHargaEkspedisi untuk mendapatkan harga berdasarkan ID 2
-                try (Connection connection = DriverManager.getConnection(JDBC_URL)) {
-                    int id_ekspedisi = 2; // ID yang sesuai dengan data di database
-                    biaya_pengiriman = getHargaEkspedisi(connection, id_ekspedisi);
-                } catch (SQLException e) {
-                    e.printStackTrace(); // Handle exception appropriately based on your application's requirements
-                }
-                // biaya_pengiriman = 0;
-                break;
-            case "3" :
-                biaya_pengiriman = 0;
-        }
-        
-        return biaya_pengiriman;
-    }
+    
+    // End method pengiriman 
     
 
     public static boolean checkLogin(Connection connection, String id_sales, String nama_sales) {
@@ -488,7 +526,7 @@ public class TestLogin {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        }  
     }
     
     private static boolean getYesorNo(String message){
