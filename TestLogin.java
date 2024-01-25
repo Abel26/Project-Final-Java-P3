@@ -107,10 +107,10 @@ public class TestLogin {
         String nama_pelanggan= "";
         String no_hp_pelanggan = "";
         String nama_kasir = "";
-        String biaya_pengiriman = "";
-        String total_bayar = "";
+        double biaya_pengiriman = 0;
+        double total_bayar = 0;
         String nama_pembayaran = "";
-        String query = "select b.nama_pelanggan,b.nomor_hp,c.nama_sales,a.biaya_pengiriman,d.nama_pembayaran from kasir a join pelanggan b on a.id_pelanggan = b.id_pelanggan join sales c on a.id_sales = c.id_sales join jenis_pembayaran d on a.id_pembayaran = d.id_pembayaran where a.id_group_transaksi = ?";
+        String query = "select b.nama_pelanggan,b.nomor_hp,c.nama_sales,a.biaya_pengiriman,d.nama_pembayaran,a.total_bayar from kasir a join sales c on a.id_sales = c.id_sales join jenis_pembayaran d on a.id_pembayaran = d.id_pembayaran left join pelanggan b on a.id_pelanggan = b.id_pelanggan where a.id_group_transaksi = ?";
         try(Connection connection = DriverManager.getConnection(JDBC_URL)){
             try(PreparedStatement preparedStatement = connection.prepareStatement(query)){
                 preparedStatement.setString(1, id_group_transaksi);
@@ -119,8 +119,8 @@ public class TestLogin {
                      nama_pelanggan = resultSet.getString("nama_pelanggan");
                      no_hp_pelanggan = resultSet.getString("nomor_hp");
                      nama_kasir = resultSet.getString("nama_sales");
-                     biaya_pengiriman = resultSet.getString("biaya_pengiriman");
-                     total_bayar = resultSet.getString("total_bayar");
+                     biaya_pengiriman = resultSet.getDouble("biaya_pengiriman");
+                     total_bayar = resultSet.getDouble("total_bayar");
                      nama_pembayaran = resultSet.getString("nama_pembayaran");
                  }
              }
@@ -275,7 +275,7 @@ public class TestLogin {
         System.out.println("Apakah pelanggan sudah melakukan pembayaran? (y/n)");
         String konfirmasi_pembayaran = terminalInput.nextLine();
         
-        if (konfirmasi_pembayaran.toLowerCase() == "y"){
+        if (konfirmasi_pembayaran.equalsIgnoreCase("y")){
             Random random = new Random();
             int randNum = random.nextInt(1000000000);
         
@@ -298,9 +298,7 @@ public class TestLogin {
                 ps.addBatch();
                 randNum++;
                 ps.executeBatch(); 
-            }   
-            
-            
+            }      
         } else {
             System.out.println("Batalkan Transaksi? (y/n)");
             String transaksi_batal = terminalInput.nextLine();
