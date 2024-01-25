@@ -5,6 +5,8 @@ import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+import java.text.DateFormat;  
+import java.util.Calendar;  
 
 
 public class TestLogin {
@@ -64,8 +66,7 @@ public class TestLogin {
                             instance.inputDataPemesanan(id_sales2, uniqueCode, nomor_hp);
                             
                             // Cetak Resi
-        
-                            // terminalInput.nextLine();
+                            cetakResi(uniqueCode);
                         }else{
                             System.out.println("id_sales " + id_sales2 + "Tidak terdaftar");
                         }
@@ -73,9 +74,7 @@ public class TestLogin {
                     }else{
                         System.out.println("Inputan salah!!!");
                     }
-                    
-                                      
-                    
+                                    
                 } else {
                     System.out.println("Id/Nama salah. Login gagal.");
                 }  
@@ -93,6 +92,61 @@ public class TestLogin {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Method Cetak Resi 
+     * 
+     */
+    
+    public static void cetakResi(String id_group_transaksi)throws Exception{
+        Date date = Calendar.getInstance().getTime();  
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");  
+        String strDate = dateFormat.format(date);  
+        
+        String nama_pelanggan= "";
+        String no_hp_pelanggan = "";
+        String nama_kasir = "";
+        String biaya_pengiriman = "";
+        String total_bayar = "";
+        String nama_pembayaran = "";
+        String query = "select b.nama_pelanggan,b.nomor_hp,c.nama_sales,a.biaya_pengiriman,d.nama_pembayaran from kasir a join pelanggan b on a.id_pelanggan = b.id_pelanggan join sales c on a.id_sales = c.id_sales join jenis_pembayaran d on a.id_pembayaran = d.id_pembayaran where a.id_group_transaksi = ?";
+        try(Connection connection = DriverManager.getConnection(JDBC_URL)){
+            try(PreparedStatement preparedStatement = connection.prepareStatement(query)){
+                preparedStatement.setString(1, id_group_transaksi);
+                 try(ResultSet resultSet = preparedStatement.executeQuery()){
+                 if(resultSet.next()){
+                     nama_pelanggan = resultSet.getString("nama_pelanggan");
+                     no_hp_pelanggan = resultSet.getString("nomor_hp");
+                     nama_kasir = resultSet.getString("nama_sales");
+                     biaya_pengiriman = resultSet.getString("biaya_pengiriman");
+                     total_bayar = resultSet.getString("total_bayar");
+                     nama_pembayaran = resultSet.getString("nama_pembayaran");
+                 }
+             }
+            }
+        }
+        
+        System.out.println("                TOKO ABC                    ");
+        System.out.println(" Jalan ke bali No 2, Jakarta Selatan 723    ");
+        System.out.println("ID Transaksi : "+id_group_transaksi);
+        System.out.println("Nama Pelanggan: "+nama_pelanggan);
+        System.out.println("No Hp Pelanggan : "+no_hp_pelanggan);
+        System.out.println("Tanggal : "+strDate);
+        System.out.println("Kasir : "+nama_kasir);
+        System.out.println("--------------------------------------------");
+        System.out.println(" Cetak Barang / nanti dibenerin             ");
+        System.out.println("--------------------------------------------");
+        System.out.println("Total Belanja : ");
+        System.out.println("Biaya Pengiriman : "+biaya_pengiriman);
+        System.out.println("Total Diskon : ");
+        System.out.println("Total Pembayaran : "+total_bayar);
+        System.out.println("");
+        System.out.println("Metode Pembayaran : "+nama_pembayaran);
+        System.out.println("");
+        System.out.println("  Terimakasih Telat Berbelanja di Toko ABC  ");
+        System.out.println("              Kritik dan Saran              ");
+        System.out.println("       081212341234/anjay@tokoabc.com       ");
     }
     
     public static String generateUniqueCode() {
@@ -166,12 +220,11 @@ public class TestLogin {
                     
                     totalBelanja += totalHargaBarang;
                     
-                    //Simpan Data Ke array
+                    //Simpan Data Ke Array List
                     myObjList.add(new Item(id_barang,qty,id_promosi,totalHargaPromosi)); 
                     
                     isLanjutkan = getYesorNo("Tambah Barang? (y/n): ");
                     terminalInput.nextLine();
-                    // Menghitung total belanja
         }
             
         System.out.println("Pilih metode pengiriman: ");
@@ -213,45 +266,48 @@ public class TestLogin {
                 System.out.println("ERROR");
         }
         
-        // double biaya_pengiriman = pengiriman();
         double totalBayar = totalBelanja + biaya_pengiriman;
         String id_pembayaran = pembayaran();
-        // Output resi
-        // System.out.println("ID Transaksi: " + id_transaksi);
         System.out.println("Total Belanja:" + totalBayar);
         String id_pelanggan = getIdPelanggan(nomor_hp);
         String Jenis_pengiriman = getJenisPengiriman(id_ekspedisi);
-        // ini bikin method isinya bakalan ngecheck nomer hp pelanggan di DB (manggil ID pelanggan berdasarkan nomor telepon) ambil variable nomor_hp
-        // contoh methodnya private static double getIdPelanggan(Connection connection, String nomer_hp)
-        for (Item model : myObjList){
-            System.out.println(model.getKodeBarang() + "|" + model.getPromosi()+ "|" + model.getTotalHargaPromosi());
-        }
         
-        // initialize a Random object somewhere; you should only need one
-        Random random = new Random();
-        // generate a random integer from 0 to 899, then add 100
-        int randNum = random.nextInt(1000000000);
+        System.out.println("Apakah pelanggan sudah melakukan pembayaran? (y/n)");
+        String konfirmasi_pembayaran = terminalInput.nextLine();
         
-        Connection c = DriverManager.getConnection(JDBC_URL);
-        String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan,id_group_transaksi) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-        PreparedStatement ps = c.prepareStatement(query);
-        for(Item model : myObjList){
-            ps.setString(1, Integer.toString(randNum));
-            ps.setString(2, model.getKodeBarang());
-            ps.setString(3, model.getPromosi());
-            ps.setDouble(4, totalBelanja);
-            ps.setDouble(5, biaya_pengiriman);
-            ps.setDouble(6, model.getTotalHargaPromosi());
-            ps.setDouble(7, totalBayar);
-            ps.setString(8, id_pembayaran);
-            ps.setString(9, SalesId);
-            ps.setString(10, Jenis_pengiriman);
-            ps.setString(11, id_pelanggan); 
-            ps.setString(12, UniqueCode);
-            ps.addBatch();
-            randNum++;
+        if (konfirmasi_pembayaran.toLowerCase() == "y"){
+            Random random = new Random();
+            int randNum = random.nextInt(1000000000);
+        
+            Connection c = DriverManager.getConnection(JDBC_URL);
+            String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan,id_group_transaksi) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+            PreparedStatement ps = c.prepareStatement(query);
+            for(Item model : myObjList){
+                ps.setString(1, Integer.toString(randNum));
+                ps.setString(2, model.getKodeBarang());
+                ps.setString(3, model.getPromosi());
+                ps.setDouble(4, totalBelanja);
+                ps.setDouble(5, biaya_pengiriman);
+                ps.setDouble(6, model.getTotalHargaPromosi());
+                ps.setDouble(7, totalBayar);
+                ps.setString(8, id_pembayaran);
+                ps.setString(9, SalesId);
+                ps.setString(10, Jenis_pengiriman);
+                ps.setString(11, id_pelanggan); 
+                ps.setString(12, UniqueCode);
+                ps.addBatch();
+                randNum++;
+                ps.executeBatch(); 
+            }   
+            
+            
+        } else {
+            System.out.println("Batalkan Transaksi? (y/n)");
+            String transaksi_batal = terminalInput.nextLine();
+            if (transaksi_batal.toLowerCase() == "y"){
+                System.out.println("Transaski Batal");
+            }
         }
-        ps.executeBatch();       
     }
     
     /**
