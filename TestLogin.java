@@ -110,7 +110,9 @@ public class TestLogin {
         double biaya_pengiriman = 0;
         double total_bayar = 0;
         String nama_pembayaran = "";
-        String query = "select b.nama_pelanggan,b.nomor_hp,c.nama_sales,a.biaya_pengiriman,d.nama_pembayaran,a.total_bayar from kasir a join sales c on a.id_sales = c.id_sales join jenis_pembayaran d on a.id_pembayaran = d.id_pembayaran left join pelanggan b on a.id_pelanggan = b.id_pelanggan where a.id_group_transaksi = ?";
+        double total_diskon = 0;
+        double total_belanja = 0;
+        String query = "select b.nama_pelanggan,b.nomor_hp,c.nama_sales,a.biaya_pengiriman,d.nama_pembayaran,a.total_bayar,SUM(a.total_diskon) as total_diskon,a.total_belanja from kasir a join sales c on a.id_sales = c.id_sales join jenis_pembayaran d on a.id_pembayaran = d.id_pembayaran left join pelanggan b on a.id_pelanggan = b.id_pelanggan where a.id_group_transaksi = ?";
         try(Connection connection = DriverManager.getConnection(JDBC_URL)){
             try(PreparedStatement preparedStatement = connection.prepareStatement(query)){
                 preparedStatement.setString(1, id_group_transaksi);
@@ -122,11 +124,20 @@ public class TestLogin {
                      biaya_pengiriman = resultSet.getDouble("biaya_pengiriman");
                      total_bayar = resultSet.getDouble("total_bayar");
                      nama_pembayaran = resultSet.getString("nama_pembayaran");
+                     total_diskon = resultSet.getDouble("total_diskon");
+                     total_belanja = resultSet.getDouble("total_belanja");
                  }
              }
             }
         }
         
+        if (nama_pelanggan == null || nama_pelanggan == "null"){
+            nama_pelanggan = "-";
+        }
+        
+        if(no_hp_pelanggan == null || no_hp_pelanggan == "null"){
+            no_hp_pelanggan = "-";
+        }
         System.out.println("                TOKO ABC                    ");
         System.out.println(" Jalan ke bali No 2, Jakarta Selatan 723    ");
         System.out.println("ID Transaksi : "+id_group_transaksi);
@@ -137,9 +148,9 @@ public class TestLogin {
         System.out.println("--------------------------------------------");
         System.out.println(" Cetak Barang / nanti dibenerin             ");
         System.out.println("--------------------------------------------");
-        System.out.println("Total Belanja : ");
+        System.out.println("Total Belanja : " +total_belanja);
         System.out.println("Biaya Pengiriman : "+biaya_pengiriman);
-        System.out.println("Total Diskon : ");
+        System.out.println("Total Diskon : "+total_diskon);
         System.out.println("Total Pembayaran : "+total_bayar);
         System.out.println("");
         System.out.println("Metode Pembayaran : "+nama_pembayaran);
@@ -149,7 +160,7 @@ public class TestLogin {
         System.out.println("       081212341234/anjay@tokoabc.com       ");
     }
     
-    public static String generateUniqueCode() {
+    public static String generateUniqueCode() { 
         // Get current timestamp
         long timestamp = System.currentTimeMillis();
 
@@ -268,7 +279,6 @@ public class TestLogin {
         
         double totalBayar = totalBelanja + biaya_pengiriman;
         String id_pembayaran = pembayaran();
-        System.out.println("Total Belanja:" + totalBayar);
         String id_pelanggan = getIdPelanggan(nomor_hp);
         String Jenis_pengiriman = getJenisPengiriman(id_ekspedisi);
         
