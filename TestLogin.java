@@ -66,7 +66,7 @@ public class TestLogin {
                             instance.inputDataPemesanan(id_sales2, uniqueCode, nomor_hp);
                             
                             // Cetak Resi
-                            cetakResi(uniqueCode);
+                            instance.cetakResi(uniqueCode);
                         }else{
                             System.out.println("id_sales " + id_sales2 + "Tidak terdaftar");
                         }
@@ -99,7 +99,7 @@ public class TestLogin {
      * 
      */
     
-    public static void cetakResi(String id_group_transaksi)throws Exception{
+    public void cetakResi(String id_group_transaksi)throws Exception{
         Date date = Calendar.getInstance().getTime();  
         DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");  
         String strDate = dateFormat.format(date);  
@@ -130,6 +130,31 @@ public class TestLogin {
              }
             }
         }
+        List<Barang> listBarang =  new ArrayList<Barang>();
+
+        String KodeBarang= "";
+        String Deskripsi = "";
+        int Jumlah = 0;
+        double Harga = 0;
+        double Diskon = 0;
+        String query_barang = "select a.id_barang, b.nama_barang, a.jumlah_barang,b.harga_barang,a.total_diskon from kasir a join barang b on a.id_barang = b.id_barang WHERE a.id_group_transaksi = ?";
+        try(Connection connection = DriverManager.getConnection(JDBC_URL)){
+            try(PreparedStatement preparedStatement = connection.prepareStatement(query_barang)){
+                preparedStatement.setString(1, id_group_transaksi);
+                 try(ResultSet resultSet = preparedStatement.executeQuery()){
+                 while(resultSet.next()){
+                     KodeBarang = resultSet.getString("id_barang");
+                     Deskripsi = resultSet.getString("nama_barang");
+                     Jumlah = resultSet.getInt("jumlah_barang");
+                     Harga = resultSet.getDouble("harga_barang");
+                     Diskon = resultSet.getDouble("total_diskon");
+                     
+                     listBarang.add(new Barang(KodeBarang, Deskripsi, Jumlah, Harga, Diskon));
+                 }
+             }
+            }
+        }
+        
         
         if (nama_pelanggan == null || nama_pelanggan == "null"){
             nama_pelanggan = "-";
@@ -146,7 +171,16 @@ public class TestLogin {
         System.out.println("Tanggal : "+strDate);
         System.out.println("Kasir : "+nama_kasir);
         System.out.println("--------------------------------------------");
-        System.out.println(" Cetak Barang / nanti dibenerin             ");
+        System.out.println("Kode Barang     | Deskripsi     | Jumlah    |Harga      ");
+        for(Barang barang : listBarang){
+            System.out.print(barang.getKodeBarang()+"  ");
+            System.out.print(barang.getDeskripsi()+"  ");
+            System.out.print(barang.getJumlah()+"  ");
+            System.out.println(barang.getHarga()+"  ");
+            if (barang.getDiskon() != 0){
+                System.out.println("   Potongan Harga : "+barang.getDiskon()+"  ");    
+            }
+        }
         System.out.println("--------------------------------------------");
         System.out.println("Total Belanja : " +total_belanja);
         System.out.println("Biaya Pengiriman : "+biaya_pengiriman);
@@ -198,8 +232,45 @@ public class TestLogin {
             return Promosi;
         }
         
-        public Double getTotalHargaPromosi(){
+        public double getTotalHargaPromosi(){
             return totalHargaPromosi;
+        }
+    }
+    
+    public class Barang {
+        
+        private String KodeBarang;
+        private String Deskripsi;
+        private int Jumlah;
+        private double Harga;
+        private double Diskon;
+        
+        public Barang(String KodeBarang, String Deskripsi, int Jumlah, double Harga, double Diskon){
+            this.KodeBarang=KodeBarang;
+            this.Deskripsi=Deskripsi;
+            this.Jumlah=Jumlah;
+            this.Harga=Harga;
+            this.Diskon=Diskon;
+        }
+        
+        public String getKodeBarang() {
+            return KodeBarang;
+        }
+        
+        public String getDeskripsi(){
+            return Deskripsi;
+        }
+        
+        public int getJumlah(){
+            return Jumlah;
+        }
+        
+        public double getHarga(){
+            return Harga;
+        }
+        
+        public double getDiskon(){
+            return Diskon;
         }
     }
     
@@ -290,7 +361,7 @@ public class TestLogin {
             int randNum = random.nextInt(1000000000);
         
             Connection c = DriverManager.getConnection(JDBC_URL);
-            String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan,id_group_transaksi) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+            String query = "INSERT INTO kasir (id_transaksi,id_barang,id_promosi,total_belanja,biaya_pengiriman,total_diskon,total_bayar,id_pembayaran,id_sales,id_ekspedisi,id_pelanggan,id_group_transaksi,jumlah_barang) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
             PreparedStatement ps = c.prepareStatement(query);
             for(Item model : myObjList){
                 ps.setString(1, Integer.toString(randNum));
@@ -305,6 +376,7 @@ public class TestLogin {
                 ps.setString(10, Jenis_pengiriman);
                 ps.setString(11, id_pelanggan); 
                 ps.setString(12, UniqueCode);
+                ps.setInt(13, model.getQty());
                 ps.addBatch();
                 randNum++;
                 ps.executeBatch(); 
